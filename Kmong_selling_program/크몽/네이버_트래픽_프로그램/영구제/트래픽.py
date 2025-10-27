@@ -78,8 +78,8 @@ class secondThread(QThread):
                 index = 0
 
                 while 1:
-                    blog_names = driver.find_elements(By.CSS_SELECTOR, ".user_info > .name")
-                    blog_url = driver.find_elements(By.CSS_SELECTOR, ".title_link")
+                    blog_names = driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                    blog_url = driver.find_elements(By.CSS_SELECTOR, "a.NChgcjk7OpdTefbaFWbJ")
                     # print(f"\nblog_url 길이 {len(blog_url)}\n")
                     # print(f"\nblog_names 길이 {len(blog_names)}\n")
                     # print(f"현재 인덱스 : {index}")
@@ -97,8 +97,8 @@ class secondThread(QThread):
                         driver.close()
                         driver.switch_to.window(tabs[0])
                         time.sleep(2)
-                        blog_names = driver.find_elements(By.CSS_SELECTOR, ".user_info > .name")
-                        blog_url = driver.find_elements(By.CSS_SELECTOR, ".title_link")
+                        blog_names = driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                        blog_url = driver.find_elements(By.CSS_SELECTOR, "a.NChgcjk7OpdTefbaFWbJ")
                         time.sleep(2)
                         if index == len(blog_names):
                             print("더 이상 없음.")
@@ -109,12 +109,12 @@ class secondThread(QThread):
                         if blog_name == input_blog_name[i]:
                             break
                         else:
-                            blog_names = driver.find_elements(By.CSS_SELECTOR, ".user_info > .name")
-                            blog_url = driver.find_elements(By.CSS_SELECTOR, ".title_link")
+                            blog_names = driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                            blog_url = driver.find_elements(By.CSS_SELECTOR, "a.NChgcjk7OpdTefbaFWbJ")
                             # print(f"인덱스 : {index}, {blog_url[index].text}, {blog_name}")
                             index += 1
                 # 찾은 블로그 게시글 들어가기
-                blog_url = driver.find_elements(By.CSS_SELECTOR, ".title_link")
+                blog_url = driver.find_elements(By.CSS_SELECTOR, "a.NChgcjk7OpdTefbaFWbJ")
                 # print(index)
                 blog_url[index].click()
 

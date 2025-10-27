@@ -45,7 +45,7 @@ class secondThread(QThread):
     start_signal = pyqtSignal(str)
     update = pyqtSignal(str)
 
-    def __init__(self, input_id, input_pw, input_keyword, input_add, input_board, input_speed_n, input_like, input_comment, input_add_comment, input_speed_like):
+    def __init__(self, input_id, input_pw, input_keyword, input_add, input_board, input_speed_n, input_comment, input_add_comment):
         super().__init__()
         self.input_id = input_id
         self.input_pw = input_pw
@@ -53,10 +53,8 @@ class secondThread(QThread):
         self.input_add = input_add
         self.input_board = input_board
         self.input_speed_n = input_speed_n
-        self.input_like = input_like
         self.input_comment = input_comment
         self.input_add_comment = input_add_comment
-        self.input_speed_like = input_speed_like
 
         
     def run(self):
@@ -64,19 +62,17 @@ class secondThread(QThread):
         self.update.emit("로그인 진행중...")
         self.login(self.input_id, self.input_pw)
         self.update.emit("자동화 진행중...")
-        self.neighbor_add(self.input_keyword, self.input_add, self.input_board, self.input_speed_n, self.input_like, self.input_comment, self.input_add_comment, self.input_speed_like, self.input_id)
+        self.neighbor_add(self.input_keyword, self.input_add, self.input_board, self.input_speed_n, self.input_comment, self.input_add_comment, self.input_id)
 
 
 # 이웃수, 공감, 댓글 싸그리
-    def neighbor_add(self, input_keyword, n, input_board, input_speed_n, input_like, input_comment, input_add_comment, input_speed_like, input_id):
+    def neighbor_add(self, input_keyword, n, input_board, input_speed_n, input_comment, input_add_comment, input_id):
         
         try:
 
             # 현재까지 완료한 서이추 수
             neighbor_index = 0
 
-            # 현재까지 완료한 공감 수
-            like_index = 0
 
             # 현재까지 완료한 댓글 수
             comment_index = 0
@@ -107,7 +103,7 @@ class secondThread(QThread):
 
                     print(f"i : {i}, cnt : {cnt}")
                     
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
 
                     print(blog_list)
 
@@ -127,7 +123,7 @@ class secondThread(QThread):
                     # 새창으로 열기
                     blog.send_keys(Keys.CONTROL + "\n")
                     time.sleep(2)
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
 
                     # 새창으로 드라이버 전환
                     tabs = self.driver.window_handles
@@ -141,12 +137,10 @@ class secondThread(QThread):
                         time.sleep(2.5)
                         print("정렬 변환")
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
-                        print("좋아요 버튼 찾는중")
-                        self.driver.find_element(By.CSS_SELECTOR,".u_likeit_list_btn._button.off")
                         print("이웃추가 버튼 찾는중")
                         self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb")
                         print("댓글 버튼 찾는중")
-                        self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__LZkE_")
+                        self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
                         print("탐색 완료")
 
                         self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb").send_keys(Keys.ENTER)
@@ -181,7 +175,7 @@ class secondThread(QThread):
 
 
                     except:
-                        self.update.emit("\n서이추 또는 좋아요, 댓글 버튼이 없어 다음으로 넘어갑니다.\n")
+                        self.update.emit("\n서이추 또는 댓글 버튼이 없어 다음으로 넘어갑니다.\n")
                         i += 1
 
                         self.driver.close()
@@ -288,25 +282,6 @@ class secondThread(QThread):
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
                         time.sleep(1.5)
 
-                        #===================좋아요 과정 ============================
-                        
-                        print(f"좋아요 : {like_index}, {input_like}")
-
-                        # 좋아요를 눌러야하는 경우
-                        if like_index < input_like:
-
-                            # 좋아요 누르기
-                            time.sleep(input_speed_like)
-                            self.driver.find_element(By.CSS_SELECTOR,".u_likeit_list_btn._button.off").send_keys(Keys.ENTER)
-                            like_index += 1
-
-                            self.update.emit(f"좋아요 {like_index}개 성공!")
-                            time.sleep(2)
-
-                        # 좋아요를 모두 누른 경우
-                        else:
-                            print("좋아요 pass")
-                            pass
                         
                         #=======================댓글 작업==========================
 
@@ -317,12 +292,10 @@ class secondThread(QThread):
 
                             # 이웃추가한 블로그에 글 리스트 받아서 댓글 입력하기
                             # 댓글 버튼들 리스트로 받기
-                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__LZkE_")
+                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
 
                             # 댓글 버튼 클릭 + 새 창으로 열기
-                            reply_btn.send_keys(Keys.CONTROL + "\n")
-                            tabs = self.driver.window_handles
-                            self.driver.switch_to.window(tabs[2])
+                            reply_btn.send_keys(Keys.ENTER)
                             time.sleep(2)
 
                             # 댓글 창 입력
@@ -332,8 +305,7 @@ class secondThread(QThread):
                             self.update.emit(f"댓글 {comment_index + 1}개 입력 완료!\n")
                             comment_index += 1
                             time.sleep(2)
-                            self.driver.close()
-                            self.driver.switch_to.window(tabs[1])
+                            
 
                         else:
                             print("댓글 pass")
@@ -361,7 +333,7 @@ class secondThread(QThread):
 
                     print(f"neighbor_index : {neighbor_index}, n : {n}")
 
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
                     print(f"블로그 리스트 길이 : {len(blog_list)}, i : {i}")
                     
                     try:
@@ -376,7 +348,7 @@ class secondThread(QThread):
                     # 새창으로 열기
                     blog.send_keys(Keys.CONTROL + "\n")
                     time.sleep(2)
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
 
                     # 새창으로 드라이버 전환
                     tabs = self.driver.window_handles
@@ -388,9 +360,8 @@ class secondThread(QThread):
                         # 이웃 추가 버튼 클릭
                         time.sleep(2.5)
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
-                        self.driver.find_element(By.CSS_SELECTOR,".u_likeit_list_btn._button.off")
                         self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb")
-                        self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__LZkE_")
+                        self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
 
                         self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb").send_keys(Keys.ENTER)
                         time.sleep(1)
@@ -399,7 +370,7 @@ class secondThread(QThread):
                         self.driver.find_element(By.CSS_SELECTOR,"#bothBuddyRadio").click()
 
                     except:
-                        self.update.emit("\n서이추 또는 좋아요 버튼이 없어 다음으로 넘어갑니다.\n")
+                        self.update.emit("\n서이추 버튼이 없어 다음으로 넘어갑니다.\n")
                         i += 1
 
                         self.driver.close()
@@ -505,25 +476,6 @@ class secondThread(QThread):
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
                         time.sleep(1.5)
 
-                        #===================좋아요 과정 ============================
-                        
-                        print(f"좋아요 : {like_index}, {input_like}")
-
-                        # 좋아요를 눌러야하는 경우
-                        if like_index < input_like:
-
-                            time.sleep(input_speed_like)
-                            # 좋아요 누르기
-                            self.driver.find_element(By.CSS_SELECTOR,".u_likeit_list_btn._button.off").send_keys(Keys.ENTER)
-                            like_index += 1
-
-                            self.update.emit(f"좋아요 {like_index}개 성공!")
-                            time.sleep(2)
-
-                        # 좋아요를 모두 누른 경우
-                        else:
-                            print("좋아요 pass")
-                            pass
                         
                         #=======================댓글 작업==========================
 
@@ -537,12 +489,10 @@ class secondThread(QThread):
 
                             # 이웃추가한 블로그에 글 리스트 받아서 댓글 입력하기
                             # 댓글 버튼들 리스트로 받기
-                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__LZkE_")
+                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
 
                             # 댓글 버튼 클릭 + 새 창으로 열기
-                            reply_btn.send_keys(Keys.CONTROL + "\n")
-                            tabs = self.driver.window_handles
-                            self.driver.switch_to.window(tabs[2])
+                            reply_btn.send_keys(Keys.ENTER)
                             time.sleep(2)
 
                             # 댓글 창 입력
@@ -552,8 +502,7 @@ class secondThread(QThread):
                             self.update.emit(f"댓글 {comment_index + 1}개 입력 완료!\n")
                             comment_index += 1
                             time.sleep(2)
-                            self.driver.close()
-                            self.driver.switch_to.window(tabs[1])
+
 
                         else:
                             print("댓글 pass")
@@ -570,14 +519,14 @@ class secondThread(QThread):
                     i += 1
 
 
-            # 아직 좋아요와 댓글이 남아 있는 경우
-            if like_index < input_like or comment_index < input_add_comment:
-                self.update.emit("\n남은 좋아요 및 댓글 작업을 시작합니다.\n")
+            # 아직 댓글이 남아 있는 경우
+            if comment_index < input_add_comment:
+                self.update.emit("\n남은 댓글 작업을 시작합니다.\n")
 
                 current_url = self.driver.current_url
 
                 # like_index와 comment_index가 입력해놓은 숫자가 될 때까지 반복
-                while like_index != input_like or comment_index != input_add_comment:
+                while comment_index != input_add_comment:
 
                     # 서이추가 0인 경우
                     if current_url == "data:,":
@@ -585,7 +534,7 @@ class secondThread(QThread):
                     
                     # 서이추 횟수까지는 모두 채운 경우
                     else:
-                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
 
                         try:
                             # 블로그 아이디 클릭
@@ -599,38 +548,12 @@ class secondThread(QThread):
                         # 새창으로 열기
                         blog.send_keys(Keys.CONTROL + "\n")
                         time.sleep(2)
-                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.name")
+                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
 
                         # 새창으로 드라이버 전환
                         tabs = self.driver.window_handles
                         self.driver.switch_to.window(tabs[1])
 
-                        # 좋아요
-                        # 좋아요를 눌러야하는 경우
-                        if like_index < input_like:
-
-                            # 블로그 정렬 바꾸기
-                            self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
-                            time.sleep(1.5)
-
-                            try:
-                                time.sleep(input_speed_like)
-                                # 좋아요 누르기
-                                self.driver.find_element(By.CSS_SELECTOR,".u_likeit_list_btn._button.off").send_keys(Keys.ENTER)
-                                like_index += 1
-                            except:
-                                self.update.emit("좋아요 버튼이 없어 넘어갑니다.")
-                                i += 1
-                                continue
-                            
-                            
-                            self.update.emit(f"좋아요 {like_index}개 성공!")
-                            time.sleep(2)
-
-                        # 좋아요를 모두 누른 경우
-                        else:
-                            print("좋아요 pass")
-                            pass
                         
                         #=======================댓글 작업==========================
 
@@ -644,7 +567,7 @@ class secondThread(QThread):
 
                             # 이웃추가한 블로그에 글 리스트 받아서 댓글 입력하기
                             # 댓글 버튼들 리스트로 받기
-                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__LZkE_").send_keys(Keys.ENTER)
+                            reply_btn = self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ").send_keys(Keys.ENTER)
                             time.sleep(2)
 
                             # 댓글 창 입력
@@ -668,7 +591,7 @@ class secondThread(QThread):
 
                         i += 1
 
-            self.update.emit("\n모든 서이추 및 댓글, 좋아요 작업 완료!")
+            self.update.emit("\n모든 서이추 및 댓글 작업 완료!")
             return 
         except:
             traceback_message = str(traceback.format_exc())
@@ -1366,14 +1289,12 @@ class second(QDialog):
 
         self.search_keyword.setText(settings.value("keyword", ""))
         self.add_n.setValue(settings.value("add", 0, type=int))
-        self.add_like.setValue(settings.value("add_like", 0, type=int))
         self.add_comment.setValue(settings.value("add_comment", 0, type=int))
 
         self.board.setText(settings.value("board", "이웃신청멘트를 입력하세요."))
         self.comment.setText(settings.value("comment", "댓글을 입력하세요."))
 
         self.speed_n.setValue(settings.value("speed_n", 0, type=int))
-        self.speed_like.setValue(settings.value("speed_like", 0, type=int))
         self.speed_comment.setValue(settings.value("speed_comment", 0, type=int))
 
     def update_text_browser(self, string):
@@ -1400,10 +1321,8 @@ class second(QDialog):
 
         print(input_board, input_comment)
 
-        input_like = self.add_like.value()
         input_speed_n = self.speed_n.value()
         input_add_comment = self.add_comment.value()
-        input_speed_like = self.speed_like.value()
 
         # 유효성 검사
         if input_id == "" or input_pw == "" or input_keyword == ""  or input_board == "이웃신청멘트를 입력하세요." or input_comment == '댓글을 입력하세요.':
@@ -1416,12 +1335,10 @@ class second(QDialog):
         settings.setValue("pw", input_pw)
         settings.setValue("keyword", input_keyword)
         settings.setValue("add", input_add)
-        settings.setValue("like", input_like)
         settings.setValue("add_comment", input_add_comment)
         settings.setValue("speed_n", input_speed_n)
         settings.setValue("board", input_board)
         settings.setValue("comment", input_comment)
-        settings.setValue("speed_like", input_speed_like)
 
 
         self.textBrowser.setText("")
@@ -1438,7 +1355,7 @@ class second(QDialog):
         input_comment = input_comment.split("\n")
         random.shuffle(input_comment)
 
-        self.second_thread = secondThread(input_id, input_pw, input_keyword, input_add, input_board, input_speed_n, input_like, input_comment, input_add_comment, input_speed_like)
+        self.second_thread = secondThread(input_id, input_pw, input_keyword, input_add, input_board, input_speed_n, input_comment, input_add_comment)
         self.second_thread.update.connect(self.update_text_browser)
 
         self.second_thread.start_signal.connect(self.update_start_signal)
@@ -1470,7 +1387,6 @@ class second(QDialog):
         self.add_n.clear()
         self.board.setText("이웃신청멘트를 입력하세요.")
         self.textBrowser.setText("")
-        self.add_like.clear()
         self.comment.setText("댓글을 입력하세요.")
         
 
