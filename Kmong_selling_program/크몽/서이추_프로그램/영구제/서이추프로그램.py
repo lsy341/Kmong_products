@@ -103,7 +103,7 @@ class secondThread(QThread):
 
                     print(f"i : {i}, cnt : {cnt}")
                     
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
 
                     print(blog_list)
 
@@ -123,7 +123,7 @@ class secondThread(QThread):
                     # 새창으로 열기
                     blog.send_keys(Keys.CONTROL + "\n")
                     time.sleep(2)
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
 
                     # 새창으로 드라이버 전환
                     tabs = self.driver.window_handles
@@ -333,7 +333,7 @@ class secondThread(QThread):
 
                     print(f"neighbor_index : {neighbor_index}, n : {n}")
 
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
                     print(f"블로그 리스트 길이 : {len(blog_list)}, i : {i}")
                     
                     try:
@@ -348,7 +348,7 @@ class secondThread(QThread):
                     # 새창으로 열기
                     blog.send_keys(Keys.CONTROL + "\n")
                     time.sleep(2)
-                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                    blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
 
                     # 새창으로 드라이버 전환
                     tabs = self.driver.window_handles
@@ -534,7 +534,7 @@ class secondThread(QThread):
                     
                     # 서이추 횟수까지는 모두 채운 경우
                     else:
-                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
 
                         try:
                             # 블로그 아이디 클릭
@@ -548,7 +548,7 @@ class secondThread(QThread):
                         # 새창으로 열기
                         blog.send_keys(Keys.CONTROL + "\n")
                         time.sleep(2)
-                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a.Yad_UyMI61VVUxvN5DUB")
+                        blog_list = self.driver.find_elements(By.CSS_SELECTOR, "a._475445f0")
 
                         # 새창으로 드라이버 전환
                         tabs = self.driver.window_handles

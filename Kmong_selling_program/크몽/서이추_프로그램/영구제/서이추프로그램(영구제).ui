@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
+    <width>928</width>
     <height>656</height>
    </rect>
   </property>
@@ -171,32 +171,6 @@
               </widget>
              </item>
              <item row="3" column="0">
-              <widget class="QLabel" name="label_7">
-               <property name="font">
-                <font>
-                 <family>HY중고딕</family>
-                 <pointsize>10</pointsize>
-                </font>
-               </property>
-               <property name="text">
-                <string>좋아요</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1">
-              <widget class="QSpinBox" name="add_like">
-               <property name="minimum">
-                <number>0</number>
-               </property>
-               <property name="maximum">
-                <number>9999</number>
-               </property>
-               <property name="value">
-                <number>0</number>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
               <widget class="QLabel" name="label_17">
                <property name="font">
                 <font>
@@ -209,7 +183,7 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="3" column="1">
               <widget class="QSpinBox" name="add_comment">
                <property name="minimum">
                 <number>0</number>
@@ -323,35 +297,11 @@ p, li { white-space: pre-wrap; }
               </layout>
              </item>
              <item>
-              <layout class="QHBoxLayout" name="horizontalLayout_5">
-               <item>
-                <widget class="QLabel" name="label_11">
-                 <property name="font">
-                  <font>
-                   <family>HY중고딕</family>
-                   <pointsize>10</pointsize>
-                  </font>
-                 </property>
-                 <property name="text">
-                  <string>좋아요</string>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QSpinBox" name="speed_like">
-                 <property name="maximum">
-                  <number>9999</number>
-                 </property>
-                </widget>
-               </item>
-               <item>
-                <widget class="QLabel" name="label_14">
-                 <property name="text">
-                  <string>초</string>
-                 </property>
-                </widget>
-               </item>
-              </layout>
+              <widget class="Line" name="line_7">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
+               </property>
+              </widget>
              </item>
              <item>
               <layout class="QHBoxLayout" name="horizontalLayout_6">
