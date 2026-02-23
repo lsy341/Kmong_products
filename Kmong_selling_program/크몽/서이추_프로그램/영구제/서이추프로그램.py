@@ -33,6 +33,188 @@ chrome_options.add_experimental_option("detach", True)
 # pyqt 부분
 import os
 
+# =========================
+# GitHub Auto Updater (방법 B: 임시 update.bat로 자기 자신 교체)
+# =========================
+import zipfile
+import tempfile
+import subprocess
+from pathlib import Path
+
+import requests
+
+# 너가 쓰는 GitHub 주소 그대로
+VERSION_URL = "https://raw.githubusercontent.com/lsy341/Kmong_products/main/Kmong_selling_program/%ED%81%AC%EB%AA%BD/%EC%84%9C%EC%9D%B4%EC%B6%94_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8/%EC%98%81%EA%B5%AC%EC%A0%9C/version.txt"
+ZIP_URL = "https://raw.githubusercontent.com/lsy341/Kmong_products/main/Kmong_selling_program/%ED%81%AC%EB%AA%BD/%EC%84%9C%EC%9D%B4%EC%B6%94_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8/%EC%98%81%EA%B5%AC%EC%A0%9C/latest.zip"
+
+def _base_dir() -> Path:
+    # exe 배포 시: exe가 있는 폴더
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve().parent
+    # py로 실행 시: 현재 파일 폴더
+    return Path(__file__).resolve().parent
+
+def _this_exe_path() -> Path:
+    # exe 배포 시: 현재 실행 중 exe
+    if getattr(sys, "frozen", False):
+        return Path(sys.executable).resolve()
+    # py 실행 시: (개발용) 현재 py 파일
+    return Path(__file__).resolve()
+
+def _read_local_version(base: Path) -> str:
+    p = base / "version.txt"
+    if not p.exists():
+        return "0.0.0"
+    return p.read_text(encoding="utf-8").strip()
+
+def _read_remote_version() -> str:
+    r = requests.get(VERSION_URL, timeout=(5, 15))
+    r.raise_for_status()
+    return r.text.strip()
+
+def _download_zip(to_path: Path) -> None:
+    r = requests.get(ZIP_URL, stream=True, timeout=(5, 60))
+    r.raise_for_status()
+    with open(to_path, "wb") as f:
+        for chunk in r.iter_content(chunk_size=1024 * 1024):
+            if chunk:
+                f.write(chunk)
+
+def _safe_extract(zip_path: Path, extract_dir: Path) -> None:
+    # Zip Slip 방지
+    extract_dir.mkdir(parents=True, exist_ok=True)
+    with zipfile.ZipFile(zip_path, "r") as z:
+        base = extract_dir.resolve()
+        for member in z.infolist():
+            target = (extract_dir / member.filename).resolve()
+            if not str(target).startswith(str(base)):
+                raise RuntimeError(f"Unsafe zip path: {member.filename}")
+        z.extractall(extract_dir)
+
+def _pick_new_exe(extract_dir: Path, current_exe_name: str) -> Path:
+    # 1) 현재 exe와 같은 이름이 zip 안에 있으면 최우선
+    same = extract_dir / current_exe_name
+    if same.exists():
+        return same
+
+    # 2) exe가 1개면 그걸 사용
+    exes = list(extract_dir.glob("*.exe"))
+    if len(exes) == 1:
+        return exes[0]
+
+    raise RuntimeError("latest.zip 안에서 교체할 exe를 찾지 못했습니다. (동일 이름 exe 또는 exe 1개만 있어야 함)")
+
+def _write_update_bat(bat_path: Path, cur_exe: Path, staged_exe: Path, staged_ver: Path | None) -> None:
+    """
+    실행 중 exe는 바로 교체가 안 되므로,
+    프로그램 종료 후 bat이 반복 시도하면서 교체 -> 재실행 -> bat 자가삭제
+    """
+    cur = str(cur_exe)
+    new = str(staged_exe)
+
+    lines = [
+        "@echo off",
+        "chcp 65001 >nul",
+        "setlocal",
+        "",
+        "REM 파일 잠금이 풀릴 때까지 반복해서 교체 시도",
+        ":loop",
+        f'move /Y "{new}" "{cur}" >nul 2>nul',
+        "if errorlevel 1 (",
+        "  ping 127.0.0.1 -n 2 >nul",
+        "  goto loop",
+        ")",
+        "",
+    ]
+
+    if staged_ver is not None and staged_ver.exists():
+        ver_dst = str(cur_exe.parent / "version.txt")
+        lines += [
+            f'copy /Y "{str(staged_ver)}" "{ver_dst}" >nul 2>nul',
+            f'del /F /Q "{str(staged_ver)}" >nul 2>nul',
+            "",
+        ]
+
+    lines += [
+        f'start "" "{cur}"',
+        "ping 127.0.0.1 -n 2 >nul",
+        f'del "%~f0" >nul 2>nul',
+        "endlocal",
+    ]
+
+    bat_path.write_text("\r\n".join(lines), encoding="utf-8")
+
+def check_and_apply_update_or_continue(log_print=True) -> None:
+    """
+    - 버전 다르면 latest.zip 다운로드
+    - 새 exe를 base_dir에 *.new.exe로 스테이징
+    - update.bat 실행
+    - 현재 프로세스 종료(배치가 교체 후 재실행)
+    """
+    base = _base_dir()
+    cur_exe = _this_exe_path()
+
+    try:
+        local_v = _read_local_version(base)
+        remote_v = _read_remote_version()
+
+        if local_v == remote_v:
+            return  # 업데이트 없음
+
+        if log_print:
+            print(f"[Updater] 업데이트 감지: local={local_v}, remote={remote_v}")
+
+        # 임시 폴더에서 zip 처리
+        with tempfile.TemporaryDirectory(prefix="upd_", dir=str(base)) as td:
+            tdir = Path(td)
+            zip_path = tdir / "latest.zip"
+            extract_dir = tdir / "extracted"
+
+            _download_zip(zip_path)
+            _safe_extract(zip_path, extract_dir)
+
+            new_exe = _pick_new_exe(extract_dir, cur_exe.name)
+
+            # version.txt는 선택(있으면 같이 교체)
+            new_ver_txt = extract_dir / "version.txt"
+            if not new_ver_txt.exists():
+                new_ver_txt = None
+
+            # ✅ bat 실행 시점에 임시폴더가 사라지면 안 되므로,
+            # base 폴더로 "스테이징(복사)" 해둠
+            staged_exe = base / (cur_exe.stem + ".new.exe")
+            if staged_exe.exists():
+                staged_exe.unlink()
+            staged_exe.write_bytes(new_exe.read_bytes())
+
+            staged_ver = None
+            if new_ver_txt is not None:
+                staged_ver = base / "version.new.txt"
+                if staged_ver.exists():
+                    staged_ver.unlink()
+                staged_ver.write_bytes(new_ver_txt.read_bytes())
+
+            bat_path = base / "update.bat"
+            if bat_path.exists():
+                try:
+                    bat_path.unlink()
+                except:
+                    pass
+
+            _write_update_bat(bat_path, cur_exe, staged_exe, staged_ver)
+
+        # 배치 실행 후 종료
+        subprocess.Popen(["cmd", "/c", str(base / "update.bat")], cwd=str(base))
+        raise SystemExit(0)
+
+    except SystemExit:
+        raise
+    except Exception as e:
+        # 실패하면 그냥 계속 실행
+        if log_print:
+            print("[Updater] 업데이트 실패(무시하고 계속 실행):", e)
+        return
+
 # 변경사항
 # 로그인 접속 아이디 리스트
 login_dict = {"" : ""}
@@ -1394,7 +1576,8 @@ class second(QDialog):
     def close(self):
         sys.exit()
         
-    
+# ✅ GUI 띄우기 전에 1번만 업데이트 체크
+check_and_apply_update_or_continue()
 
 QApplication.setStyle("fusion")
 app = QApplication(sys.argv)
