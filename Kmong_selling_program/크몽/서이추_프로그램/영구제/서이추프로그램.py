@@ -138,12 +138,12 @@ class secondThread(QThread):
                         print("정렬 변환")
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
                         print("이웃추가 버튼 찾는중")
-                        self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb")
+                        self.driver.find_element(By.CSS_SELECTOR,".add_buddy_btn__l5P_e")
                         print("댓글 버튼 찾는중")
                         self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
                         print("탐색 완료")
 
-                        self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb").send_keys(Keys.ENTER)
+                        self.driver.find_element(By.CSS_SELECTOR,".add_buddy_btn__l5P_e").send_keys(Keys.ENTER)
                         time.sleep(1)
 
                         # 이웃 수가 5000명 초과 경우
@@ -360,10 +360,10 @@ class secondThread(QThread):
                         # 이웃 추가 버튼 클릭
                         time.sleep(2.5)
                         self.driver.find_element(By.CSS_SELECTOR, "#contentslist_block > div.post_block__XQnk9 > div > div > button:nth-child(3)").send_keys(Keys.ENTER)
-                        self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb")
+                        self.driver.find_element(By.CSS_SELECTOR,".add_buddy_btn__l5P_e")
                         self.driver.find_element(By.CSS_SELECTOR, ".comment_btn__TUucZ")
 
-                        self.driver.find_element(By.CSS_SELECTOR,".link__dkflP.add_buddy_btn__cHOUb").send_keys(Keys.ENTER)
+                        self.driver.find_element(By.CSS_SELECTOR,".add_buddy_btn__l5P_e").send_keys(Keys.ENTER)
                         time.sleep(1)
                         
                         # 서로 이웃 추가 버튼 클릭
