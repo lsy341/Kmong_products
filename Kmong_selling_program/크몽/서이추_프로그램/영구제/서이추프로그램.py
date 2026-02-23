@@ -14,9 +14,10 @@ import traceback
 from PyQt5.QtCore import QSettings
 from datetime import datetime
 from datetime import timedelta
-from PyQt5.QtCore import QObject, QSettings
+from PyQt5.QtCore import QSettings
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication
+import ctypes
 
 # 크롬 드라이버 자동 업데이트
 from webdriver_manager.chrome import ChromeDriverManager
@@ -155,6 +156,14 @@ def check_and_apply_update_or_continue(log_print=True) -> None:
     - update.bat 실행
     - 현재 프로세스 종료(배치가 교체 후 재실행)
     """
+    
+    open_console()  # ← 콘솔 생성
+
+    print("=================================")
+    print("업데이트 확인중입니다...")
+    print("잠시만 기다려주세요.")
+    print("=================================\n")
+    
     base = _base_dir()
     cur_exe = _this_exe_path()
 
@@ -163,6 +172,8 @@ def check_and_apply_update_or_continue(log_print=True) -> None:
         remote_v = _read_remote_version()
 
         if local_v == remote_v:
+            print("최신 버전입니다.")
+            close_console()  # ← 콘솔 닫기
             return  # 업데이트 없음
 
         if log_print:
@@ -218,6 +229,15 @@ def check_and_apply_update_or_continue(log_print=True) -> None:
         if log_print:
             print("[Updater] 업데이트 실패(무시하고 계속 실행):", e)
         return
+    
+def open_console():
+    ctypes.windll.kernel32.AllocConsole()
+    sys.stdout = open("CONOUT$", "w", encoding="utf-8")
+    sys.stderr = open("CONOUT$", "w", encoding="utf-8")
+
+def close_console():
+    time.sleep(1.5)  # 메시지 보여줄 시간
+    ctypes.windll.kernel32.FreeConsole()
 
 # 변경사항
 # 로그인 접속 아이디 리스트
