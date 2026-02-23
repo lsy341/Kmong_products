@@ -33,6 +33,10 @@ chrome_options.add_experimental_option("detach", True)
 # pyqt 부분
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UI_PATH = "로그인.ui"
+UI_PATH2 = "서이추프로그램(영구제).ui"
+
 # =========================
 # GitHub Auto Updater (방법 B: 임시 update.bat로 자기 자신 교체)
 # =========================
@@ -219,9 +223,7 @@ def check_and_apply_update_or_continue(log_print=True) -> None:
 # 로그인 접속 아이디 리스트
 login_dict = {"" : ""}
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-UI_PATH = "로그인.ui"
-UI_PATH2 = "서이추프로그램(영구제).ui"
+
 
 class secondThread(QThread):
     start_signal = pyqtSignal(str)
@@ -1465,7 +1467,7 @@ class second(QDialog):
         self.stop_btn.clicked.connect(self.stop)
 
         # 이전 세팅값 불러오기
-        settings = QSettings("블로그1", "서이추프로그램3")
+        settings = QSettings("블로그1050", "서이추프로그램3")
         self.id.setText(settings.value("id", ""))
         self.pw.setText(settings.value("pw", ""))
 
