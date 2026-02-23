@@ -1,0 +1,16 @@
+build/
+dist/
+*.zip
+
+# binaries / archives
+*.exe
+*.zip
+
+# pyinstaller
+dist/
+build/
+*.spec
+
+# python
+__pycache__/
+*.pyc
