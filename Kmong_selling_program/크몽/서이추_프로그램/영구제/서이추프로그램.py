@@ -1,5 +1,4 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -14,13 +13,10 @@ import traceback
 from PyQt5.QtCore import QSettings
 from datetime import datetime
 from datetime import timedelta
-from PyQt5.QtCore import QSettings
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QApplication
 import ctypes
 
-# 크롬 드라이버 자동 업데이트
-from webdriver_manager.chrome import ChromeDriverManager
 
 # 브라우저 꺼짐 방지
 chrome_options = Options()
@@ -52,6 +48,26 @@ import requests
 VERSION_URL = "https://raw.githubusercontent.com/lsy341/Kmong_products/main/Kmong_selling_program/%ED%81%AC%EB%AA%BD/%EC%84%9C%EC%9D%B4%EC%B6%94_%ED%94%84%EB%A1%9C%EA%B7%B8%EB%9E%A8/%EC%98%81%EA%B5%AC%EC%A0%9C/version.txt"
 ZIP_URL = "https://github.com/lsy341/Kmong_products/releases/download/latest/latest.zip"
 
+def _open_console_once():
+    # -w(windowed) exe에서도 필요할 때만 콘솔을 생성
+    ctypes.windll.kernel32.AllocConsole()
+    try:
+        sys.stdout = open("CONOUT$", "w", encoding="utf-8", errors="replace")
+        sys.stderr = open("CONOUT$", "w", encoding="utf-8", errors="replace")
+    except:
+        pass
+
+def _close_console_once(delay_sec: float = 0.8):
+    # 메시지 잠깐 보여주고 콘솔 닫기
+    try:
+        time.sleep(delay_sec)
+    except:
+        pass
+    try:
+        ctypes.windll.kernel32.FreeConsole()
+    except:
+        pass
+
 def _base_dir() -> Path:
     # exe 배포 시: exe가 있는 폴더
     if getattr(sys, "frozen", False):
@@ -77,14 +93,30 @@ def _read_remote_version() -> str:
     r.raise_for_status()
     return r.text.strip()
 
-def _download_zip(to_path: Path) -> None:
+def _download_zip(to_path: Path, progress_cb=None) -> None:
     r = requests.get(ZIP_URL, stream=True, timeout=(5, 60))
     r.raise_for_status()
+
+    total = r.headers.get("Content-Length")
+    total = int(total) if total and total.isdigit() else None
+
+    downloaded = 0
+    last_percent = -1
+
     with open(to_path, "wb") as f:
         for chunk in r.iter_content(chunk_size=1024 * 1024):
-            if chunk:
-                f.write(chunk)
+            if not chunk:
+                continue
+            f.write(chunk)
+            downloaded += len(chunk)
 
+            if total:
+                percent = int(downloaded * 100 / total)
+                if percent != last_percent:  # 과도한 출력 방지
+                    last_percent = percent
+                    if progress_cb:
+                        progress_cb(percent, downloaded, total)
+                        
 def _safe_extract(zip_path: Path, extract_dir: Path) -> None:
     # Zip Slip 방지
     extract_dir.mkdir(parents=True, exist_ok=True)
@@ -150,53 +182,54 @@ def _write_update_bat(bat_path: Path, cur_exe: Path, staged_exe: Path, staged_ve
     bat_path.write_text("\r\n".join(lines), encoding="utf-8")
 
 def check_and_apply_update_or_continue(log_print=True) -> None:
-    """
-    - 버전 다르면 latest.zip 다운로드
-    - 새 exe를 base_dir에 *.new.exe로 스테이징
-    - update.bat 실행
-    - 현재 프로세스 종료(배치가 교체 후 재실행)
-    """
-    
-    open_console()  # ← 콘솔 생성
-
-    print("=================================")
-    print("업데이트 확인중입니다...")
-    print("잠시만 기다려주세요.")
-    print("=================================\n")
-    
     base = _base_dir()
     cur_exe = _this_exe_path()
+
+    console_opened = False
 
     try:
         local_v = _read_local_version(base)
         remote_v = _read_remote_version()
 
+        # 업데이트 없음 -> 콘솔 안 띄우고 그대로 GUI 진행
         if local_v == remote_v:
-            print("최신 버전입니다.")
-            close_console()  # ← 콘솔 닫기
-            return  # 업데이트 없음
+            return
 
-        if log_print:
-            print(f"[Updater] 업데이트 감지: local={local_v}, remote={remote_v}")
+        # 업데이트 있음 -> 여기서만 콘솔 띄움
+        _open_console_once()
+        console_opened = True
 
-        # 임시 폴더에서 zip 처리
+        print(f"[Updater] 업데이트 감지: local={local_v}, remote={remote_v}")
+        print("[Updater] 다운로드를 시작합니다...")
+
+        def progress_cb(percent, downloaded, total):
+            mb = 1024 * 1024
+            # 한 줄 덮어쓰기
+            print(
+                f"\r[Updater] 다운로드중... {percent}% "
+                f"({downloaded/mb:.1f}MB / {total/mb:.1f}MB)",
+                end="",
+                flush=True,
+            )
+
         with tempfile.TemporaryDirectory(prefix="upd_", dir=str(base)) as td:
             tdir = Path(td)
             zip_path = tdir / "latest.zip"
             extract_dir = tdir / "extracted"
 
-            _download_zip(zip_path)
+            _download_zip(zip_path, progress_cb=progress_cb)
+            print("\n[Updater] 다운로드 완료. 압축 해제중...")
+
             _safe_extract(zip_path, extract_dir)
+            print("[Updater] 압축 해제 완료. 교체 파일 준비중...")
 
             new_exe = _pick_new_exe(extract_dir, cur_exe.name)
 
-            # version.txt는 선택(있으면 같이 교체)
             new_ver_txt = extract_dir / "version.txt"
             if not new_ver_txt.exists():
                 new_ver_txt = None
 
-            # ✅ bat 실행 시점에 임시폴더가 사라지면 안 되므로,
-            # base 폴더로 "스테이징(복사)" 해둠
+            # 스테이징
             staged_exe = base / (cur_exe.stem + ".new.exe")
             if staged_exe.exists():
                 staged_exe.unlink()
@@ -218,26 +251,23 @@ def check_and_apply_update_or_continue(log_print=True) -> None:
 
             _write_update_bat(bat_path, cur_exe, staged_exe, staged_ver)
 
+        print("[Updater] 업데이트 적용을 위해 재시작합니다...")
+
         # 배치 실행 후 종료
         subprocess.Popen(["cmd", "/c", str(base / "update.bat")], cwd=str(base))
+
+        # ✅ GUI 뜨기 전에 콘솔 닫고 종료
+        _close_console_once(1.0)
         raise SystemExit(0)
 
     except SystemExit:
         raise
     except Exception as e:
-        # 실패하면 그냥 계속 실행
-        if log_print:
-            print("[Updater] 업데이트 실패(무시하고 계속 실행):", e)
+        # 업데이트 실패 -> (업데이트 시도하다 콘솔을 띄웠다면) 콘솔 메시지 출력 후 닫고 계속 실행
+        if log_print and console_opened:
+            print("\n[Updater] 업데이트 실패(무시하고 계속 실행):", e)
+            _close_console_once(1.2)
         return
-    
-def open_console():
-    ctypes.windll.kernel32.AllocConsole()
-    sys.stdout = open("CONOUT$", "w", encoding="utf-8")
-    sys.stderr = open("CONOUT$", "w", encoding="utf-8")
-
-def close_console():
-    time.sleep(1.5)  # 메시지 보여줄 시간
-    ctypes.windll.kernel32.FreeConsole()
 
 # 변경사항
 # 로그인 접속 아이디 리스트
