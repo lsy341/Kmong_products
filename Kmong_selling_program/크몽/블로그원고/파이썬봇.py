@@ -13,6 +13,22 @@ from selenium.webdriver.common.action_chains import ActionChains
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, ContextTypes, filters
 
+def force_front_selenium_only(driver):
+    """Selenium만으로 크롬을 앞으로/활성화 '시도' (100% 보장 X)"""
+    # 1) CDP: 앞으로 가져오기
+    try:
+        driver.execute_cdp_cmd("Browser.bringToFront", {})
+    except Exception:
+        pass
+
+
+    # 3) 위치/크기 재설정으로 앞으로 나오게 유도
+    try:
+        driver.set_window_rect(x=0, y=0, width=1200, height=900)
+        time.sleep(0.2)
+    except Exception:
+        pass
+
 pyautogui.FAILSAFE = True
 
 
@@ -21,8 +37,8 @@ pyautogui.FAILSAFE = True
 # =========================
 BOT_TOKEN = "8358829457:AAHuhZm0J3w-YNj5yYhyRtdLM5GZWeo7GGg"
 
-NAVER_ID = "tmddus20825"
-NAVER_PW = "thtk6738@@"
+NAVER_ID = "nkingseoul"
+NAVER_PW = "qmffhrm1@"
 
 # 종료 키워드 (원고 끝 판단)
 END_KEYWORD = "감사합니다!"
@@ -68,8 +84,10 @@ def parse_message_to_title_body(raw: str) -> tuple[str, str]:
 # =========================
 def naver_login(driver, user_id: str, user_pw: str):
     driver.implicitly_wait(5)
-    driver.maximize_window()
     driver.get("https://nid.naver.com/nidlogin.login?mode=form&url=https://www.naver.com/")
+
+    # ✅ 로그인 때만 포커스 유도
+    force_front_selenium_only(driver)
     time.sleep(1.2)
 
     id_el = driver.find_element(By.CSS_SELECTOR, "#id")
@@ -85,14 +103,16 @@ def naver_login(driver, user_id: str, user_pw: str):
     driver.find_element(By.CSS_SELECTOR, "#log\\.login").click()
     time.sleep(2)
 
-    # 브라우저 등록
+    # 브라우저 등록: 있으면 클릭, 없으면 패스
     try:
-        driver.find_element(By.CSS_SELECTOR, "#new\\.save").click()
+        save_btn = WebDriverWait(driver, 3).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "#new\\.save"))
+        )
+        save_btn.click()
         time.sleep(1)
-    except NoSuchElementException:
+    except TimeoutException:
         pass
 
-    # 추가 인증/캡차가 있으면 수동 처리
     if "nid.naver.com" in driver.current_url:
         print("⚠️ 추가 인증/캡차 처리 후 콘솔에서 Enter")
         input()
@@ -255,39 +275,74 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
+    msg_obj = update.effective_message
+    if not msg_obj:
+        return
+
+    user = update.effective_user
+    if not user:
+        return
+
+    user_id = user.id
     s = st(user_id)
 
+    # 대기 모드가 아니면 안내만 하고 종료 (봇은 계속 실행)
     if not s["waiting"]:
-        await update.message.reply_text("지금은 대기 상태가 아니야. /wait 먼저 입력해줘.")
+        await msg_obj.reply_text("지금은 대기 상태가 아니야. /wait 먼저 입력해줘.")
         return
 
-    msg = update.message.text or ""
-    # 누적 (메시지 단위로 줄바꿈 하나 붙여서 합침)
-    if s["buffer"]:
-        s["buffer"] += "\n" + msg
-    else:
-        s["buffer"] = msg
+    try:
+        msg = msg_obj.text or ""
 
-    # 아직 끝 키워드가 없으면 계속 대기
-    if END_KEYWORD not in s["buffer"]:
-        await update.message.reply_text(f"📥 추가 수신 완료. '{END_KEYWORD}' 나오면 자동 실행할게.")
-        return
+        # 누적 (메시지 단위로 줄바꿈 하나 붙여서 합침)
+        if s["buffer"]:
+            s["buffer"] += "\n" + msg
+        else:
+            s["buffer"] = msg
 
-    # 끝 키워드가 들어왔으면 실행
-    s["waiting"] = False
-    raw = s["buffer"]
-    s["buffer"] = ""
+        # 아직 끝 키워드가 없으면 계속 대기
+        if END_KEYWORD not in s["buffer"]:
+            await msg_obj.reply_text(f"📥 추가 수신 완료. '{END_KEYWORD}' 나오면 자동 실행할게.")
+            return
 
-    await update.message.reply_text("✅ 원고 끝(감사합니다) 감지! 네이버 포스팅 시작합니다...")
+        # 끝 키워드가 들어왔으면 실행
+        raw = s["buffer"]
+        s["buffer"] = ""
+        s["waiting"] = False
 
-    async with POST_LOCK:
-        try:
-            # 무거운 작업은 thread로
-            await asyncio.to_thread(naver_post_from_raw, raw)
-            await update.message.reply_text("✅ 완료! (저장 버튼 클릭 + 브라우저 종료까지 끝)")
-        except Exception as e:
-            await update.message.reply_text(f"❌ 실패: {type(e).__name__}: {e}")
+        await msg_obj.reply_text("✅ 원고 끝(감사합니다) 감지! 네이버 포스팅 시작합니다...")
+
+        async with POST_LOCK:
+            try:
+                # 무거운 작업은 thread로
+                await asyncio.to_thread(naver_post_from_raw, raw)
+
+                await msg_obj.reply_text("✅ 완료! (저장 버튼 클릭 + 브라우저 종료까지 끝)")
+                # 성공이면 대기 종료 상태 유지 (원하면 여기서 자동 wait로 바꿀 수도 있음)
+                return
+
+            except Exception as e:
+                # ✅ 실패 이유 전송 + 다시 wait 모드로 복귀
+                err_msg = f"{type(e).__name__}: {e}"
+                s["waiting"] = True      # 다시 대기
+                s["buffer"] = ""         # 버퍼는 초기화(원하면 유지로 바꿔줄 수 있음)
+                await msg_obj.reply_text(
+                    "❌ 포스팅 실패!\n"
+                    f"사유: {err_msg}\n\n"
+                    "✅ 다시 대기 모드로 돌아갔어. 원고를 처음부터 다시 보내줘!"
+                )
+                return
+
+    except Exception as e:
+        # handle_text 자체에서 터지는 예외도 방어: 이유 보내고 다시 wait 복귀
+        err_msg = f"{type(e).__name__}: {e}"
+        s["waiting"] = True
+        s["buffer"] = ""
+        await msg_obj.reply_text(
+            "⚠️ 처리 중 오류가 발생했지만 봇은 계속 실행 중이야.\n"
+            f"사유: {err_msg}\n\n"
+            "✅ 다시 대기 모드로 돌아갔어. 원고를 다시 보내줘!"
+        )
 
 
 def main():
