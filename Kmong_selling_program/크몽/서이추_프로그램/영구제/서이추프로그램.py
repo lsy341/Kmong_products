@@ -861,6 +861,11 @@ class secondThread(QThread):
             # 로그인 버튼
             login_btn = self.driver.find_element(By.CSS_SELECTOR, "#log\.login")
             login_btn.click()
+            
+            self.update.emit("\n보안문자 20초 대기중")
+            self.update.emit("로그인까지 완료해주세요.")
+            time.sleep(20)
+            
 
             # 로그인 브라우저 등록
             try:
@@ -1517,7 +1522,7 @@ class second(QDialog):
         self.stop_btn.clicked.connect(self.stop)
 
         # 이전 세팅값 불러오기
-        settings = QSettings("블로그1050", "서이추프로그램3")
+        settings = QSettings("블로그1", "서이추프로그램3")
         self.id.setText(settings.value("id", ""))
         self.pw.setText(settings.value("pw", ""))
 
