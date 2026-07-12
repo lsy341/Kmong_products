@@ -303,7 +303,7 @@ class secondThread(QThread):
         for j in range(input_traffic):
             
             for i in range(len(input_keyword)):
-                driver = webdriver.Chrome(options=chrome_options)
+                driver = webdriver.Chrome()
 
                 # 웹페이지 해당 주소 이동
                 driver.implicitly_wait(5)

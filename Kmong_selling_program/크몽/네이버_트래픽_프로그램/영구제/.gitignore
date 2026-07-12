@@ -1,0 +1,4 @@
+.venv/
+.vscode/
+배포방법.txt
+build.ps1
