@@ -10,7 +10,12 @@ a = Analysis(
     pathex=[],
     binaries=[],
     datas=add_file,
-    hiddenimports=[],
+    hiddenimports=[
+        'selenium.webdriver.chrome.webdriver',
+        'selenium.webdriver.chrome.options',
+        'selenium.webdriver.chrome.service',
+        'selenium.webdriver.common.service',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
