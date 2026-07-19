@@ -1,3 +1,11 @@
+import os
+import sys
+
+# PyQt5가 플랫폼 플러그인 경로를 못 찾는 문제 방지 (한글 경로 등에서 발생)
+_qt_plugins_path = os.path.join(sys.prefix, "Lib", "site-packages", "PyQt5", "Qt5", "plugins", "platforms")
+if os.path.isdir(_qt_plugins_path):
+    os.environ["QT_QPA_PLATFORM_PLUGIN_PATH"] = _qt_plugins_path
+
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -859,7 +867,7 @@ class secondThread(QThread):
 
 
             # 로그인 버튼
-            login_btn = self.driver.find_element(By.CSS_SELECTOR, "#log\.login")
+            login_btn = self.driver.find_element(By.CSS_SELECTOR, "#loginBtn_row")
             login_btn.click()
             
             self.update.emit("\n보안문자 20초 대기중")
