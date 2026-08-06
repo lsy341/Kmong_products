@@ -317,15 +317,15 @@ class secondThread(QThread):
 
                 while 1:
                     blog_names = driver.find_elements(By.CSS_SELECTOR, "a.fender-ui_475445f0")
-                    blog_url = driver.find_elements(By.CSS_SELECTOR, "a.mfA6htQ3PFYdkANS")
-                    # print(f"\nblog_url 길이 {len(blog_url)}\n")
-                    # print(f"\nblog_names 길이 {len(blog_names)}\n")
-                    # print(f"현재 인덱스 : {index}")
+                    blog_url = driver.find_elements(By.CSS_SELECTOR, "a.jqhiKnyPWMotIyBy")
+                    print(f"\nblog_url 길이 {len(blog_url)}\n")
+                    print(f"\nblog_names 길이 {len(blog_names)}\n")
+                    print(f"현재 인덱스 : {index}")
 
 
                     # 현재 바라보고 있는 페이지에 없을 경우
                     if index == len(blog_names):
-                        # print("페이지에 없음")
+                        print("페이지에 없음")
                         # 다음 페이지 불러오기
                         blog_names[-1].send_keys(Keys.END)
                         time.sleep(2)
@@ -336,7 +336,7 @@ class secondThread(QThread):
                         driver.switch_to.window(tabs[0])
                         time.sleep(2)
                         blog_names = driver.find_elements(By.CSS_SELECTOR, "a.fender-ui_475445f0")
-                        blog_url = driver.find_elements(By.CSS_SELECTOR, "a.mfA6htQ3PFYdkANS")
+                        blog_url = driver.find_elements(By.CSS_SELECTOR, "a.jqhiKnyPWMotIyBy")
                         time.sleep(2)
                         if index == len(blog_names):
                             print("더 이상 없음.")
@@ -348,12 +348,12 @@ class secondThread(QThread):
                             break
                         else:
                             blog_names = driver.find_elements(By.CSS_SELECTOR, "a.fender-ui_475445f0")
-                            blog_url = driver.find_elements(By.CSS_SELECTOR, "a.mfA6htQ3PFYdkANS")
-                            # print(f"인덱스 : {index}, {blog_url[index].text}, {blog_name}")
+                            blog_url = driver.find_elements(By.CSS_SELECTOR, "a.jqhiKnyPWMotIyBy")
+                            print(f"인덱스 : {index}, {blog_url[index].text}, {blog_name}")
                             index += 1
                 # 찾은 블로그 게시글 들어가기
-                blog_url = driver.find_elements(By.CSS_SELECTOR, "a.mfA6htQ3PFYdkANS")
-                # print(index)
+                blog_url = driver.find_elements(By.CSS_SELECTOR, "a.jqhiKnyPWMotIyBy")
+                print(index)
                 blog_url[index].click()
 
                 # 체류시간
